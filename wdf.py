@@ -17,6 +17,7 @@ QRImagePath = os.getcwd() + '/qrcode.jpg'
 tip = 0
 uuid = ''
 
+base_uri = ''
 redirect_uri = ''
 
 skey = ''
@@ -33,7 +34,7 @@ My = []
 def getUUID():
 	global uuid
 
-	url = 'http://login.weixin.qq.com/jslogin'
+	url = 'https://login.weixin.qq.com/jslogin'
 	params = {
 		'appid': 'wx782c26e4c19acffb',
 		'fun': 'new',
@@ -62,7 +63,7 @@ def getUUID():
 def showQRImage():
 	global tip
 
-	url = 'http://login.weixin.qq.com/qrcode/' + uuid
+	url = 'https://login.weixin.qq.com/qrcode/' + uuid
 	params = {
 		't': 'webwx',
 		'_': int(time.time()),
@@ -85,9 +86,9 @@ def showQRImage():
 	print '请使用微信扫描二维码以登录'
 
 def waitForLogin():
-	global tip, redirect_uri
+	global tip, base_uri, redirect_uri
 
-	url = 'http://wx.qq.com/cgi-bin/mmwebwx-bin/login?tip=%s&uuid=%s&_=%s' % (tip, uuid, int(time.time()))
+	url = 'https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login?tip=%s&uuid=%s&_=%s' % (tip, uuid, int(time.time()))
 
 	request = urllib2.Request(url = url)
 	response = urllib2.urlopen(request)
@@ -109,6 +110,7 @@ def waitForLogin():
 		regx = r'window.redirect_uri="(\S+?)";'
 		pm = re.search(regx, data)
 		redirect_uri = pm.group(1) + '&fun=new'
+		base_uri = redirect_uri[:redirect_uri.rfind('/')]
 	elif code == '408': #超时
 		pass
 	# elif code == '400' or code == '500':
@@ -165,7 +167,7 @@ def login():
 
 def webwxinit():
 
-	url = 'http://wx.qq.com/cgi-bin/mmwebwx-bin/webwxinit?pass_ticket=%s&skey=%s&r=%s' % (pass_ticket, skey, int(time.time()))
+	url = base_uri + '/webwxinit?pass_ticket=%s&skey=%s&r=%s' % (pass_ticket, skey, int(time.time()))
 	params = {
 		'BaseRequest': BaseRequest
 	}
@@ -198,7 +200,7 @@ def webwxinit():
 
 def webwxgetcontact():
 	
-	url = 'http://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact?pass_ticket=%s&skey=%s&r=%s' % (pass_ticket, skey, int(time.time()))
+	url = base_uri + '/webwxgetcontact?pass_ticket=%s&skey=%s&r=%s' % (pass_ticket, skey, int(time.time()))
 
 	request = urllib2.Request(url = url)
 	request.add_header('ContentType', 'application/json; charset=UTF-8')
@@ -212,42 +214,6 @@ def webwxgetcontact():
 	# print data
 
 	dic = json.loads(data)
-
-	'''
-		[{
-			"Uin": 0,
-			"UserName": "@64086c01bd043b83b7f77e91a703f2bd",
-			"NickName": "杭州出租车机场预约",
-			"HeadImgUrl": "/cgi-bin/mmwebwx-bin/webwxgeticon?seq=620692776&username=@64086c01bd043b83b7f77e91a703f2bd&skey=@crypt_d04f2967_17b53247d86656e12ea420c7068b57ed",
-			"ContactFlag": 3,
-			"MemberCount": 0,
-			"MemberList": [],
-			"RemarkName": "",
-			"HideInputBarFlag": 0,
-			"Sex": 0,
-			"Signature": "",
-			"VerifyFlag": 24,
-			"OwnerUin": 0,
-			"PYInitial": "HZCZCJCYY",
-			"PYQuanPin": "hangzhouchuzuchejichangyuyao",
-			"RemarkPYInitial": "",
-			"RemarkPYQuanPin": "",
-			"StarFriend": 0,
-			"AppAccountFlag": 0,
-			"Statues": 0,
-			"AttrStatus": 0,
-			"Province": "浙江",
-			"City": "杭州",
-			"Alias": "hztaxijc",
-			"SnsFlag": 0,
-			"UniFriend": 0,
-			"DisplayName": "",
-			"ChatRoomId": 0,
-			"KeyWord": "gh_",
-			"EncryChatRoomId": ""
-		}, ...]
-	'''
-
 	MemberList = dic['MemberList']
 
 	# 倒序遍历,不然删除的时候出问题..
@@ -271,7 +237,7 @@ def createChatroom(UserNames):
 		MemberList.append({'UserName': UserName})
 
 
-	url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxcreatechatroom?pass_ticket=%s&r=%s' % (pass_ticket, int(time.time()))
+	url = base_uri + '/webwxcreatechatroom?pass_ticket=%s&r=%s' % (pass_ticket, int(time.time()))
 	params = {
 		'BaseRequest': BaseRequest,
 		'MemberCount': len(MemberList),
@@ -301,7 +267,7 @@ def createChatroom(UserNames):
 	return (ChatRoomName, DelectedList)
 
 def deleteMember(ChatRoomName, UserNames):
-	url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxupdatechatroom?fun=delmember&pass_ticket=%s' % (pass_ticket)
+	url = base_uri + '/webwxupdatechatroom?fun=delmember&pass_ticket=%s' % (pass_ticket)
 	params = {
 		'BaseRequest': BaseRequest,
 		'ChatRoomName': ChatRoomName,
@@ -327,7 +293,7 @@ def deleteMember(ChatRoomName, UserNames):
 	return True
 
 def addMember(ChatRoomName, UserNames):
-	url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxupdatechatroom?fun=addmember&pass_ticket=%s' % (pass_ticket)
+	url = base_uri + '/webwxupdatechatroom?fun=addmember&pass_ticket=%s' % (pass_ticket)
 	params = {
 		'BaseRequest': BaseRequest,
 		'ChatRoomName': ChatRoomName,
@@ -430,8 +396,9 @@ def main():
 				NickName += '(%s)' % Member['RemarkName']
 			resultNames.append(NickName.encode('utf-8'))
 
-	print '---------- 被删除的好友列表 ----------\n'
+	print '---------- 被删除的好友列表 ----------'
 	print '\n'.join(resultNames)
+	print '-----------------------------------'
 
 # windows下编码问题修复
 # http://blog.csdn.net/heyuxuanzee/article/details/8442718
@@ -457,3 +424,5 @@ if __name__ == '__main__' :
 	raw_input()
 
 	main()
+	
+	raw_input()
