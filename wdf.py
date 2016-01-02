@@ -251,9 +251,16 @@ def webwxgetcontact():
 	MemberList = dic['MemberList']
 
 	# 倒序遍历,不然删除的时候出问题..
+	SpecialUsers = ['newsapp', 'fmessage', 'filehelper', 'weibo', 'qqmail', 'fmessage', 'tmessage', 'qmessage', 'qqsync', 'floatbottle', 'lbsapp', 'shakeapp', 'medianote', 'qqfriend', 'readerapp', 'blogapp', 'facebookapp', 'masssendapp', 'meishiapp', 'feedsapp', 'voip', 'blogappweixin', 'weixin', 'brandsessionholder', 'weixinreminder', 'wxid_novlwrv3lqwv11', 'gh_22b87fa7cb3c', 'officialaccounts', 'notification_messages', 'wxid_novlwrv3lqwv11', 'gh_22b87fa7cb3c', 'wxitil', 'userexperience_alarm', 'notification_messages']
 	for i in xrange(len(MemberList) - 1, -1, -1):
 		Member = MemberList[i]
-		if Member['AttrStatus'] == 0 or Member['AttrStatus'] == 4 or Member['UserName'] == My['UserName']: # 公众号/微信团队/自己
+		if Member['VerifyFlag'] & 8 != 0: # 公众号/服务号
+			MemberList.remove(Member)
+		elif Member['UserName'] in SpecialUsers: # 特殊账号
+			MemberList.remove(Member)
+		elif Member['UserName'].find('@@') != -1: # 群聊
+			MemberList.remove(Member)
+		elif Member['UserName'] == My['UserName']: # 自己
 			MemberList.remove(Member)
 
 	return MemberList
@@ -429,19 +436,19 @@ def main():
 # windows下编码问题修复
 # http://blog.csdn.net/heyuxuanzee/article/details/8442718
 class UnicodeStreamFilter:  
-    def __init__(self, target):  
-        self.target = target  
-        self.encoding = 'utf-8'  
-        self.errors = 'replace'  
-        self.encode_to = self.target.encoding  
-    def write(self, s):  
-        if type(s) == str:  
-            s = s.decode('utf-8')  
-        s = s.encode(self.encode_to, self.errors).decode(self.encode_to)  
-        self.target.write(s)  
-          
+	def __init__(self, target):  
+		self.target = target  
+		self.encoding = 'utf-8'  
+		self.errors = 'replace'  
+		self.encode_to = self.target.encoding  
+	def write(self, s):  
+		if type(s) == str:  
+			s = s.decode('utf-8')  
+		s = s.encode(self.encode_to, self.errors).decode(self.encode_to)  
+		self.target.write(s)  
+		  
 if sys.stdout.encoding == 'cp936':  
-    sys.stdout = UnicodeStreamFilter(sys.stdout)
+	sys.stdout = UnicodeStreamFilter(sys.stdout)
 
 if __name__ == '__main__' :
 
