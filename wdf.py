@@ -8,6 +8,7 @@ import cookielib
 import time
 import xml.dom.minidom
 import json
+import sys
 
 MAX_GROUP_NUM = 35 # 每组人数
 
@@ -72,11 +73,14 @@ def showQRImage():
 
 	tip = 1
 
-	f = open(QRImagePath, 'w')
+	f = open(QRImagePath, 'wb')
 	f.write(response.read())
 	f.close()
 
-	os.system('open %s' % QRImagePath)
+	if sys.platform == 'win32':
+		os.system('call %s' % QRImagePath)
+	else:
+		os.system('open %s' % QRImagePath)
 
 	print '请使用微信扫描二维码以登录'
 
@@ -171,7 +175,7 @@ def webwxinit():
 	response = urllib2.urlopen(request)
 	data = response.read()
 
-	f = open(os.getcwd() + '/webwxinit.json', 'w')
+	f = open(os.getcwd() + '/webwxinit.json', 'wb')
 	f.write(data)
 	f.close()
 
@@ -182,6 +186,16 @@ def webwxinit():
 	ContactList = dic['ContactList']
 	My = dic['User']
 
+	ErrMsg = dic['BaseResponse']['ErrMsg']
+	if len(ErrMsg) > 0:
+		print ErrMsg
+
+	Ret = dic['BaseResponse']['Ret']
+	if Ret != 0:
+		return False
+		
+	return True
+
 def webwxgetcontact():
 	
 	url = 'http://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact?pass_ticket=%s&skey=%s&r=%s' % (pass_ticket, skey, int(time.time()))
@@ -191,7 +205,7 @@ def webwxgetcontact():
 	response = urllib2.urlopen(request)
 	data = response.read()
 
-	f = open(os.getcwd() + '/webwxgetcontact.json', 'w')
+	f = open(os.getcwd() + '/webwxgetcontact.json', 'wb')
 	f.write(data)
 	f.close()
 
@@ -343,6 +357,7 @@ def main():
 		return
 
 	showQRImage()
+	time.sleep(1)
 
 	while waitForLogin() != '200':
 		pass
@@ -353,7 +368,9 @@ def main():
 		print '登录失败'
 		return
 
-	webwxinit()
+	if webwxinit() == False:
+		print '初始化失败'
+		return
 
 	MemberList = webwxgetcontact()
 
@@ -376,7 +393,8 @@ def main():
 
 		print '第%s组...' % (i + 1)
 		print ', '.join(NickNames)
-		raw_input('回车键继续...')
+		print '回车键继续...'
+		raw_input()
 
 		# 新建群组/添加成员
 		if ChatRoomName == '':
@@ -408,9 +426,27 @@ def main():
 	print '---------- 被删除的好友列表 ----------\n'
 	print '\n'.join(resultNames)
 
+# windows下编码问题修复
+# http://blog.csdn.net/heyuxuanzee/article/details/8442718
+class UnicodeStreamFilter:  
+    def __init__(self, target):  
+        self.target = target  
+        self.encoding = 'utf-8'  
+        self.errors = 'replace'  
+        self.encode_to = self.target.encoding  
+    def write(self, s):  
+        if type(s) == str:  
+            s = s.decode('utf-8')  
+        s = s.encode(self.encode_to, self.errors).decode(self.encode_to)  
+        self.target.write(s)  
+          
+if sys.stdout.encoding == 'cp936':  
+    sys.stdout = UnicodeStreamFilter(sys.stdout)
+
 if __name__ == '__main__' :
 
 	print '本程序的查询结果可能会引起一些心理上的不适,请小心使用...'
-	raw_input('回车键继续...')
+	print '回车键继续...'
+	raw_input()
 
 	main()
