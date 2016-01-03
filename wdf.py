@@ -80,12 +80,12 @@ def showQRImage():
 	f.write(response.read())
 	f.close()
 
-	if sys.platform.find('win') >= 0:
-		os.system('call %s' % QRImagePath)
+	if sys.platform.find('darwin') >= 0:
+		os.system('open %s' % QRImagePath)
 	elif sys.platform.find('linux') >= 0:
 		os.system('xdg-open %s' % QRImagePath)
 	else:
-		os.system('open %s' % QRImagePath)
+		os.system('call %s' % QRImagePath)
 
 	print '请使用微信扫描二维码以登录'
 
