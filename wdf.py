@@ -432,4 +432,5 @@ if __name__ == '__main__' :
 
 	main()
 
-	raw_input('回车键结束')
+	print '回车键结束'
+	raw_input()
