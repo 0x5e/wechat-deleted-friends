@@ -80,9 +80,9 @@ def showQRImage():
 	f.write(response.read())
 	f.close()
 
-	if sys.platform.find('win') == 0:
+	if sys.platform.find('win') >= 0:
 		os.system('call %s' % QRImagePath)
-	elif sys.platform.find('linux') == 0:
+	elif sys.platform.find('linux') >= 0:
 		os.system('xdg-open %s' % QRImagePath)
 	else:
 		os.system('open %s' % QRImagePath)
