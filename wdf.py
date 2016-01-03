@@ -10,6 +10,8 @@ import xml.dom.minidom
 import json
 import sys
 
+DEBUG = False
+
 MAX_GROUP_NUM = 35 # 每组人数
 
 QRImagePath = os.getcwd() + '/qrcode.jpg'
@@ -78,8 +80,10 @@ def showQRImage():
 	f.write(response.read())
 	f.close()
 
-	if sys.platform == 'win32':
+	if sys.platform.find('win') >= 0:
 		os.system('call %s' % QRImagePath)
+	elif sys.platform.find('linux') >= 0:
+		os.system('xdg-open %s' % QRImagePath)
 	else:
 		os.system('open %s' % QRImagePath)
 
@@ -177,9 +181,10 @@ def webwxinit():
 	response = urllib2.urlopen(request)
 	data = response.read()
 
-	f = open(os.getcwd() + '/webwxinit.json', 'wb')
-	f.write(data)
-	f.close()
+	if DEBUG == True:
+		f = open(os.getcwd() + '/webwxinit.json', 'wb')
+		f.write(data)
+		f.close()
 
 	# print data
 
@@ -207,9 +212,10 @@ def webwxgetcontact():
 	response = urllib2.urlopen(request)
 	data = response.read()
 
-	f = open(os.getcwd() + '/webwxgetcontact.json', 'wb')
-	f.write(data)
-	f.close()
+	if DEBUG == True:
+		f = open(os.getcwd() + '/webwxgetcontact.json', 'wb')
+		f.write(data)
+		f.close()
 
 	# print data
 
@@ -424,5 +430,5 @@ if __name__ == '__main__' :
 	raw_input()
 
 	main()
-	
+
 	raw_input()
