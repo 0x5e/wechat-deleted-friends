@@ -9,6 +9,7 @@ import time
 import xml.dom.minidom
 import json
 import sys
+import math
 
 DEBUG = False
 
@@ -358,7 +359,7 @@ def main():
 
 	ChatRoomName = ''
 	result = []
-	for i in xrange(0, MemberCount / MAX_GROUP_NUM):
+	for i in xrange(0, int(math.ceil(MemberCount / float(MAX_GROUP_NUM)))):
 		UserNames = []
 		NickNames = []
 		DelectedList = ''
@@ -369,7 +370,7 @@ def main():
 			Member = MemberList[i * MAX_GROUP_NUM + j]
 			UserNames.append(Member['UserName'])
 			NickNames.append(Member['NickName'].encode('utf-8'))
-
+                        
 		print '第%s组...' % (i + 1)
 		print ', '.join(NickNames)
 		print '回车键继续...'
@@ -431,4 +432,4 @@ if __name__ == '__main__' :
 
 	main()
 
-	raw_input()
+	raw_input('回车键结束')
