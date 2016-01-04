@@ -16,6 +16,8 @@
 没试过被拉黑的情况
 
 Mac OS用法:
-Terminal
-$ Python wdf.py
+启动Terminal
+
+`$ python wdf.py`
+
 按指示做即可
