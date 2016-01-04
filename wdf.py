@@ -262,16 +262,16 @@ def createChatroom(UserNames):
 	dic = json.loads(data)
 	ChatRoomName = dic['ChatRoomName']
 	MemberList = dic['MemberList']
-	DelectedList = []
+	DeletedList = []
 	for Member in MemberList:
 		if Member['MemberStatus'] == 4: #被对方删除了
-			DelectedList.append(Member['UserName'])
+			DeletedList.append(Member['UserName'])
 
 	ErrMsg = dic['BaseResponse']['ErrMsg']
 	if len(ErrMsg) > 0:
 		print ErrMsg
 
-	return (ChatRoomName, DelectedList)
+	return (ChatRoomName, DeletedList)
 
 def deleteMember(ChatRoomName, UserNames):
 	url = base_uri + '/webwxupdatechatroom?fun=delmember&pass_ticket=%s' % (pass_ticket)
@@ -316,16 +316,16 @@ def addMember(ChatRoomName, UserNames):
 
 	dic = json.loads(data)
 	MemberList = dic['MemberList']
-	DelectedList = []
+	DeletedList = []
 	for Member in MemberList:
 		if Member['MemberStatus'] == 4: #被对方删除了
-			DelectedList.append(Member['UserName'])
+			DeletedList.append(Member['UserName'])
 
 	ErrMsg = dic['BaseResponse']['ErrMsg']
 	if len(ErrMsg) > 0:
 		print ErrMsg
 
-	return DelectedList
+	return DeletedList
 
 def main():
 
@@ -362,7 +362,7 @@ def main():
 	for i in xrange(0, int(math.ceil(MemberCount / float(MAX_GROUP_NUM)))):
 		UserNames = []
 		NickNames = []
-		DelectedList = ''
+		DeletedList = ''
 		for j in xrange(0, MAX_GROUP_NUM):
 			if i * MAX_GROUP_NUM + j >= MemberCount:
 				break
@@ -378,15 +378,15 @@ def main():
 
 		# 新建群组/添加成员
 		if ChatRoomName == '':
-			(ChatRoomName, DelectedList) = createChatroom(UserNames)
+			(ChatRoomName, DeletedList) = createChatroom(UserNames)
 		else:
-			DelectedList = addMember(ChatRoomName, UserNames)
+			DeletedList = addMember(ChatRoomName, UserNames)
 
-		DelectedCount = len(DelectedList)
-		if DelectedCount > 0:
-			result += DelectedList
+		DeletedCount = len(DeletedList)
+		if DeletedCount > 0:
+			result += DeletedList
 
-		print '找到%s个被删好友' % DelectedCount
+		print '找到%s个被删好友' % DeletedCount
 		# raw_input()
 
 		# 删除成员
