@@ -196,8 +196,8 @@ def webwxinit():
 	My = dic['User']
 
 	ErrMsg = dic['BaseResponse']['ErrMsg']
-	if len(ErrMsg) > 0:
-		print ErrMsg
+	# if len(ErrMsg) > 0:
+	# 	print ErrMsg
 
 	Ret = dic['BaseResponse']['Ret']
 	if Ret != 0:
@@ -269,8 +269,8 @@ def createChatroom(UserNames):
 			DeletedList.append(Member['UserName'])
 
 	ErrMsg = dic['BaseResponse']['ErrMsg']
-	if len(ErrMsg) > 0:
-		print ErrMsg
+	# if len(ErrMsg) > 0:
+	# 	print ErrMsg
 
 	return ChatRoomName, DeletedList
 
@@ -291,8 +291,8 @@ def deleteMember(ChatRoomName, UserNames):
 
 	dic = json.loads(data)
 	ErrMsg = dic['BaseResponse']['ErrMsg']
-	if len(ErrMsg) > 0:
-		print ErrMsg
+	# if len(ErrMsg) > 0:
+	# 	print ErrMsg
 
 	Ret = dic['BaseResponse']['Ret']
 	if Ret != 0:
@@ -323,8 +323,8 @@ def addMember(ChatRoomName, UserNames):
 			DeletedList.append(Member['UserName'])
 
 	ErrMsg = dic['BaseResponse']['ErrMsg']
-	if len(ErrMsg) > 0:
-		print ErrMsg
+	# if len(ErrMsg) > 0:
+	# 	print ErrMsg
 
 	return DeletedList
 
