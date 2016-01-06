@@ -76,7 +76,7 @@ def getUUID():
 	response = wdf_urllib.urlopen(request)
 	data = response.read().decode('utf-8', 'replace')
 
-	# print data
+	# print(data)
 
 	# window.QRLogin.code = 200; window.QRLogin.uuid = "oZwt_bFfRg==";
 	regx = r'window.QRLogin.code = (\d+); window.QRLogin.uuid = "(\S+?)"'
@@ -115,7 +115,6 @@ def showQRImage():
 	else:
 		os.system('call %s' % QRImagePath)
 
-	#print '请使用微信扫描二维码以登录'
 	print('请使用微信扫描二维码以登录')
 
 def waitForLogin():
@@ -127,7 +126,6 @@ def waitForLogin():
 	response = wdf_urllib.urlopen(request)
 	data = response.read().decode('utf-8', 'replace')
 	
-	# print data
 	# print(data)
 
 	# window.code=500;
@@ -137,11 +135,9 @@ def waitForLogin():
 	code = pm.group(1)
 
 	if code == '201': #已扫描
-		#print '成功扫描,请在手机上点击确认以登录'
 		print('成功扫描,请在手机上点击确认以登录')
 		tip = 0
 	elif code == '200': #已登录
-		#print '正在登录...'
 		print('正在登录...')
 		regx = r'window.redirect_uri="(\S+?)";'
 		pm = re.search(regx, data)
@@ -160,7 +156,6 @@ def login():
 	response = wdf_urllib.urlopen(request)
 	data = response.read().decode('utf-8', 'replace')
 
-	# print data
 	# print(data)
 
 	'''
@@ -188,7 +183,6 @@ def login():
 		elif node.nodeName == 'pass_ticket':
 			pass_ticket = node.childNodes[0].data
 
-	# print 'skey: %s, wxsid: %s, wxuin: %s, pass_ticket: %s' % (skey, wxsid, wxuin, pass_ticket)
 	# print('skey: %s, wxsid: %s, wxuin: %s, pass_ticket: %s' % (skey, wxsid, wxuin, pass_ticket))
 
 	#if skey == '' or wxsid == '' or wxuin == '' or pass_ticket == '':
@@ -223,7 +217,7 @@ def webwxinit():
 		f.write(data)
 		f.close()
 
-	# print data
+	# print(data)
 
 	global ContactList, My
 	dic = json.loads(data)
@@ -231,8 +225,8 @@ def webwxinit():
 	My = dic['User']
 
 	ErrMsg = dic['BaseResponse']['ErrMsg']
-	# if len(ErrMsg) > 0:
-	#	print ErrMsg
+	if len(ErrMsg) > 0:
+		print(ErrMsg)
 
 	Ret = dic['BaseResponse']['Ret']
 	if Ret != 0:
@@ -255,7 +249,7 @@ def webwxgetcontact():
 		f.write(data)
 		f.close()
 
-	# print data
+	# print(data)
 	data = data.decode('utf-8','replace')
 
 	dic = json.loads(data)
@@ -263,7 +257,6 @@ def webwxgetcontact():
 
 	# 倒序遍历,不然删除的时候出问题..
 	SpecialUsers = ['newsapp', 'fmessage', 'filehelper', 'weibo', 'qqmail', 'fmessage', 'tmessage', 'qmessage', 'qqsync', 'floatbottle', 'lbsapp', 'shakeapp', 'medianote', 'qqfriend', 'readerapp', 'blogapp', 'facebookapp', 'masssendapp', 'meishiapp', 'feedsapp', 'voip', 'blogappweixin', 'weixin', 'brandsessionholder', 'weixinreminder', 'wxid_novlwrv3lqwv11', 'gh_22b87fa7cb3c', 'officialaccounts', 'notification_messages', 'wxid_novlwrv3lqwv11', 'gh_22b87fa7cb3c', 'wxitil', 'userexperience_alarm', 'notification_messages']
-	#for i in xrange(len(MemberList) - 1, -1, -1):
 	for i in range(len(MemberList) - 1, -1, -1):
 		Member = MemberList[i]
 		if Member['VerifyFlag'] & 8 != 0: # 公众号/服务号
@@ -297,7 +290,7 @@ def createChatroom(UserNames):
 	response = wdf_urllib.urlopen(request)
 	data = response.read().decode('utf-8', 'replace')
 
-	# print data
+	# print(data)
 
 	dic = json.loads(data)
 	ChatRoomName = dic['ChatRoomName']
@@ -308,8 +301,8 @@ def createChatroom(UserNames):
 			DeletedList.append(Member['UserName'])
 
 	ErrMsg = dic['BaseResponse']['ErrMsg']
-	# if len(ErrMsg) > 0:
-	#	print ErrMsg
+	if len(ErrMsg) > 0:
+		print(ErrMsg)
 
 	return ChatRoomName, DeletedList
 
@@ -326,12 +319,12 @@ def deleteMember(ChatRoomName, UserNames):
 	response = wdf_urllib.urlopen(request)
 	data = response.read().decode('utf-8', 'replace')
 
-	# print data
+	# print(data)
 
 	dic = json.loads(data)
 	ErrMsg = dic['BaseResponse']['ErrMsg']
-	# if len(ErrMsg) > 0:
-	#	print ErrMsg
+	if len(ErrMsg) > 0:
+		print(ErrMsg)
 
 	Ret = dic['BaseResponse']['Ret']
 	if Ret != 0:
@@ -352,7 +345,7 @@ def addMember(ChatRoomName, UserNames):
 	response = wdf_urllib.urlopen(request)
 	data = response.read().decode('utf-8', 'replace')
 
-	# print data
+	# print(data)
 
 	dic = json.loads(data)
 	MemberList = dic['MemberList']
@@ -362,8 +355,8 @@ def addMember(ChatRoomName, UserNames):
 			DeletedList.append(Member['UserName'])
 
 	ErrMsg = dic['BaseResponse']['ErrMsg']
-	# if len(ErrMsg) > 0:
-	#	print ErrMsg
+	if len(ErrMsg) > 0:
+		print(ErrMsg)
 
 	return DeletedList
 
@@ -377,7 +370,6 @@ def main():
 
 	
 	if not getUUID():
-		#print '获取uuid失败'
 		print('获取uuid失败')
 		return
 
@@ -390,24 +382,20 @@ def main():
 	os.remove(QRImagePath)
 
 	if not login():
-		#print '登录失败'
 		print('登录失败')
 		return
 
 	if not webwxinit():
-		#print '初始化失败'
 		print('初始化失败')
 		return
 
 	MemberList = webwxgetcontact()
 
 	MemberCount = len(MemberList)
-	#print '通讯录共%s位好友' % MemberCount
 	print('通讯录共%s位好友' % MemberCount)
 
 	ChatRoomName = ''
 	result = []
-	#print '开始查找...'
 	print('开始查找...')
 	group_num=int(math.ceil(MemberCount / float(MAX_GROUP_NUM)))
 	for i in range(0, group_num):
@@ -461,12 +449,9 @@ def main():
 				NickName += '(%s)' % Member['RemarkName']
 			resultNames.append(NickName.encode('utf-8'))
 
-	#print '\n---------- 被删除的好友列表 ----------'
 	print('\n---------- 被删除的好友列表 ----------')
 	# 过滤emoji
 	resultNames=list(map(lambda x:re.sub(r'<span.+/span>','',x),resultNames))
-	#print '\n'.join(resultNames)
-	#print '-----------------------------------'
 	print('\n'.join(resultNames))
 	print('-----------------------------------')
 
