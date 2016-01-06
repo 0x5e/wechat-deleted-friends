@@ -257,7 +257,7 @@ def webwxgetcontact():
 	MemberList = dic['MemberList']
 
 	# 倒序遍历,不然删除的时候出问题..
-	SpecialUsers = ['newsapp', 'fmessage', 'filehelper', 'weibo', 'qqmail', 'fmessage', 'tmessage', 'qmessage', 'qqsync', 'floatbottle', 'lbsapp', 'shakeapp', 'medianote', 'qqfriend', 'readerapp', 'blogapp', 'facebookapp', 'masssendapp', 'meishiapp', 'feedsapp', 'voip', 'blogappweixin', 'weixin', 'brandsessionholder', 'weixinreminder', 'wxid_novlwrv3lqwv11', 'gh_22b87fa7cb3c', 'officialaccounts', 'notification_messages', 'wxid_novlwrv3lqwv11', 'gh_22b87fa7cb3c', 'wxitil', 'userexperience_alarm', 'notification_messages']
+	SpecialUsers = ["newsapp", "fmessage", "filehelper", "weibo", "qqmail", "tmessage","qmessage", "qqsync", "floatbottle", "lbsapp", "shakeapp","medianote", "qqfriend", "readerapp", "blogapp", "facebookapp","masssendapp", "meishiapp", "feedsapp", "voip", "blogappweixin","weixin", "brandsessionholder", "weixinreminder","wxid_novlwrv3lqwv11", "gh_22b87fa7cb3c", "officialaccounts","notification_messages", "wxitil", "userexperience_alarm"]
 	for i in range(len(MemberList) - 1, -1, -1):
 		Member = MemberList[i]
 		if Member['VerifyFlag'] & 8 != 0: # 公众号/服务号
