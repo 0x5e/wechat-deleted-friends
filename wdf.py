@@ -34,6 +34,7 @@ BaseRequest = {}
 ContactList = []
 My = []
 
+
 def getUUID():
 	global uuid
 
@@ -182,7 +183,7 @@ def webwxinit():
 	response = urllib2.urlopen(request)
 	data = response.read()
 
-	if DEBUG == True:
+	if DEBUG:
 		f = open(os.getcwd() + '/webwxinit.json', 'wb')
 		f.write(data)
 		f.close()
@@ -195,8 +196,8 @@ def webwxinit():
 	My = dic['User']
 
 	ErrMsg = dic['BaseResponse']['ErrMsg']
-	if len(ErrMsg) > 0:
-		print ErrMsg
+	# if len(ErrMsg) > 0:
+	# 	print ErrMsg
 
 	Ret = dic['BaseResponse']['Ret']
 	if Ret != 0:
@@ -213,7 +214,7 @@ def webwxgetcontact():
 	response = urllib2.urlopen(request)
 	data = response.read()
 
-	if DEBUG == True:
+	if DEBUG:
 		f = open(os.getcwd() + '/webwxgetcontact.json', 'wb')
 		f.write(data)
 		f.close()
@@ -268,10 +269,10 @@ def createChatroom(UserNames):
 			DeletedList.append(Member['UserName'])
 
 	ErrMsg = dic['BaseResponse']['ErrMsg']
-	if len(ErrMsg) > 0:
-		print ErrMsg
+	# if len(ErrMsg) > 0:
+	# 	print ErrMsg
 
-	return (ChatRoomName, DeletedList)
+	return ChatRoomName, DeletedList
 
 def deleteMember(ChatRoomName, UserNames):
 	url = base_uri + '/webwxupdatechatroom?fun=delmember&pass_ticket=%s' % (pass_ticket)
@@ -290,8 +291,8 @@ def deleteMember(ChatRoomName, UserNames):
 
 	dic = json.loads(data)
 	ErrMsg = dic['BaseResponse']['ErrMsg']
-	if len(ErrMsg) > 0:
-		print ErrMsg
+	# if len(ErrMsg) > 0:
+	# 	print ErrMsg
 
 	Ret = dic['BaseResponse']['Ret']
 	if Ret != 0:
@@ -322,8 +323,8 @@ def addMember(ChatRoomName, UserNames):
 			DeletedList.append(Member['UserName'])
 
 	ErrMsg = dic['BaseResponse']['ErrMsg']
-	if len(ErrMsg) > 0:
-		print ErrMsg
+	# if len(ErrMsg) > 0:
+	# 	print ErrMsg
 
 	return DeletedList
 
@@ -332,7 +333,7 @@ def main():
 	opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.CookieJar()))
 	urllib2.install_opener(opener)
 	
-	if getUUID() == False:
+	if not getUUID():
 		print '获取uuid失败'
 		return
 
@@ -344,11 +345,11 @@ def main():
 
 	os.remove(QRImagePath)
 
-	if login() == False:
+	if not login():
 		print '登录失败'
 		return
 
-	if webwxinit() == False:
+	if not webwxinit():
 		print '初始化失败'
 		return
 
@@ -359,22 +360,29 @@ def main():
 
 	ChatRoomName = ''
 	result = []
-	for i in xrange(0, int(math.ceil(MemberCount / float(MAX_GROUP_NUM)))):
+	print '开始查找...'
+	group_num=int(math.ceil(MemberCount / float(MAX_GROUP_NUM)))
+	for i in xrange(0, group_num):
 		UserNames = []
 		NickNames = []
-		DeletedList = ''
 		for j in xrange(0, MAX_GROUP_NUM):
 			if i * MAX_GROUP_NUM + j >= MemberCount:
 				break
-
 			Member = MemberList[i * MAX_GROUP_NUM + j]
 			UserNames.append(Member['UserName'])
 			NickNames.append(Member['NickName'].encode('utf-8'))
-                        
-		print '第%s组...' % (i + 1)
-		print ', '.join(NickNames)
-		print '回车键继续...'
-		raw_input()
+
+		# 	进度条
+		progress='-'*10
+		progress_str='%s'%''.join(map(lambda x:'#',progress[:(10*(i+1))/group_num]))
+		print '[',progress_str,''.join('-'*(10-len(progress_str))),']',
+		print '(当前,你被%d人删除,好友共%d人'%(len(result),len(MemberList)),'\r',
+
+		# print '第%s组...' % (i + 1)
+
+		# print ', '.join(NickNames)
+		# print '回车键继续...'
+		# raw_input()
 
 		# 新建群组/添加成员
 		if ChatRoomName == '':
@@ -386,7 +394,7 @@ def main():
 		if DeletedCount > 0:
 			result += DeletedList
 
-		print '找到%s个被删好友' % DeletedCount
+		# print '找到%s个被删好友' % DeletedCount
 		# raw_input()
 
 		# 删除成员
@@ -403,7 +411,9 @@ def main():
 				NickName += '(%s)' % Member['RemarkName']
 			resultNames.append(NickName.encode('utf-8'))
 
-	print '---------- 被删除的好友列表 ----------'
+	print '\n---------- 被删除的好友列表 ----------'
+	# 过滤emoji
+	resultNames=map(lambda x:re.sub(r'<span.+/span>','',x),resultNames)
 	print '\n'.join(resultNames)
 	print '-----------------------------------'
 
