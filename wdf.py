@@ -50,7 +50,6 @@ def getUUID():
 	data = response.read()
 
 	# print data
-	data = data.decode('utf-8','replace')
 
 	# window.QRLogin.code = 200; window.QRLogin.uuid = "oZwt_bFfRg==";
 	regx = r'window.QRLogin.code = (\d+); window.QRLogin.uuid = "(\S+?)"'
@@ -220,6 +219,7 @@ def webwxgetcontact():
 		f.close()
 
 	# print data
+	data = data.decode('utf-8','replace')
 
 	dic = json.loads(data)
 	MemberList = dic['MemberList']
