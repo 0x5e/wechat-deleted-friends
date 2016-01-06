@@ -220,6 +220,7 @@ def webwxgetcontact():
 		f.close()
 
 	# print data
+	data = data.decode('utf-8','replace')
 
 	dic = json.loads(data)
 	MemberList = dic['MemberList']
