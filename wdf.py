@@ -21,6 +21,7 @@ import xml.dom.minidom
 import json
 import sys
 import math
+import subprocess
 
 DEBUG = False
 
@@ -109,11 +110,11 @@ def showQRImage():
 	f.close()
 
 	if sys.platform.find('darwin') >= 0:
-		os.system('open %s' % QRImagePath)
+		subprocess.call(['open', QRImagePath])
 	elif sys.platform.find('linux') >= 0:
-		os.system('xdg-open %s' % QRImagePath)
+		subprocess.call(['xdg-open', QRImagePath])
 	else:
-		os.system('call %s' % QRImagePath)
+		os.startfile(QRImagePath)
 
 	print('请使用微信扫描二维码以登录')
 
