@@ -48,6 +48,7 @@ BaseRequest = {}
 
 ContactList = []
 My = []
+SyncKey = ''
 
 try:
     xrange
@@ -224,19 +225,26 @@ def webwxinit():
     request = getRequest(url=url, data=json.dumps(params))
     request.add_header('ContentType', 'application/json; charset=UTF-8')
     response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    data = response.read()
 
     if DEBUG:
         f = open(os.path.join(os.getcwd(), 'webwxinit.json'), 'wb')
         f.write(data)
         f.close()
 
+    data = data.decode('utf-8', 'replace')
+
     # print(data)
 
-    global ContactList, My
+    global ContactList, My, SyncKey
     dic = json.loads(data)
     ContactList = dic['ContactList']
     My = dic['User']
+
+    SyncKeyList = []
+    for item in dic['SyncKey']['List']:
+        SyncKeyList.append('%s_%s' % (item['Key'], item['Val']))
+    SyncKey = '|'.join(SyncKeyList)
 
     ErrMsg = dic['BaseResponse']['ErrMsg']
     if DEBUG:
@@ -384,11 +392,31 @@ def addMember(ChatRoomName, UserNames):
     return DeletedList
 
 
+def syncCheck():
+    url = base_uri + '/synccheck?'
+    params = {
+        'skey': BaseRequest['SKey'],
+        'sid': BaseRequest['Sid'],
+        'uin': BaseRequest['Uin'],
+        'deviceId': BaseRequest['DeviceID'],
+        'synckey': SyncKey,
+        'r': int(time.time()),
+    }
+
+    request = getRequest(url=url + urlencode(params))
+    response = wdf_urllib.urlopen(request)
+    data = response.read().decode('utf-8', 'replace')
+
+    # print(data)
+
+    # window.synccheck={retcode:"0",selector:"2"}
+
+
 def main():
 
     try:
-    	ssl._create_default_https_context = ssl._create_unverified_context
-    	
+        ssl._create_default_https_context = ssl._create_unverified_context
+
         opener = wdf_urllib.build_opener(
             wdf_urllib.HTTPCookieProcessor(CookieJar()))
         wdf_urllib.install_opener(opener)
