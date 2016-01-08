@@ -22,6 +22,7 @@ import json
 import sys
 import math
 import subprocess
+import ssl
 
 DEBUG = False
 
@@ -386,6 +387,8 @@ def addMember(ChatRoomName, UserNames):
 def main():
 
     try:
+    	ssl._create_default_https_context = ssl._create_unverified_context
+    	
         opener = wdf_urllib.build_opener(
             wdf_urllib.HTTPCookieProcessor(CookieJar()))
         wdf_urllib.install_opener(opener)
