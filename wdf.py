@@ -29,7 +29,6 @@ MAX_GROUP_NUM = 35  # 每组人数
 INTERFACE_CALLING_INTERVAL = 16  # 接口调用时间间隔, 值设为13时亲测出现"操作太频繁"
 MAX_PROGRESS_LEN = 50
 
-# QRImagePath = os.getcwd() + '/qrcode.jpg'
 QRImagePath = os.path.join(os.getcwd(), 'qrcode.jpg')
 
 tip = 0
@@ -151,6 +150,7 @@ def waitForLogin():
         pm = re.search(regx, data)
         redirect_uri = pm.group(1) + '&fun=new'
         base_uri = redirect_uri[:redirect_uri.rfind('/')]
+
         # closeQRImage
         if sys.platform.find('darwin') >= 0:  # for OSX with Preview
             os.system("osascript -e 'quit app \"Preview\"'")
@@ -198,8 +198,6 @@ def login():
     # print('skey: %s, wxsid: %s, wxuin: %s, pass_ticket: %s' % (skey, wxsid,
     # wxuin, pass_ticket))
 
-    # if skey == '' or wxsid == '' or wxuin == '' or pass_ticket == '':
-        # return False
     if not all((skey, wxsid, wxuin, pass_ticket)):
         return False
 
@@ -228,7 +226,6 @@ def webwxinit():
     data = response.read().decode('utf-8', 'replace')
 
     if DEBUG:
-        # f = open(os.getcwd() + '/webwxinit.json', 'wb')
         f = open(os.path.join(os.getcwd(), 'webwxinit.json'), 'wb')
         f.write(data)
         f.close()
@@ -243,7 +240,6 @@ def webwxinit():
     ErrMsg = dic['BaseResponse']['ErrMsg']
     if DEBUG:
         print("Ret: %d, ErrMsg: %s" % (dic['BaseResponse']['Ret'], ErrMsg))
-
 
     Ret = dic['BaseResponse']['Ret']
     if Ret != 0:
@@ -264,7 +260,6 @@ def webwxgetcontact():
     data = response.read()
 
     if DEBUG:
-        # f = open(os.getcwd() + '/webwxgetcontact.json', 'wb')
         f = open(os.path.join(os.getcwd(), 'webwxgetcontact.json'), 'wb')
         f.write(data)
         f.close()
@@ -459,7 +454,7 @@ def main():
         print(''.join(
             ['[', progress_str, ''.join('-' * (progress_len - len(progress_str))), ']']))
         print('新发现你被%d人删除' % DeletedCount)
-        for i in xrange(DeletedCount):
+        for i in range(DeletedCount):
             if d[DeletedList[i]][1] != '':
                 print(d[DeletedList[i]][0] + '(%s)' % d[DeletedList[i]][1])
             else:
@@ -516,5 +511,3 @@ if __name__ == '__main__':
     print('开始')
     main()
     print('结束')
-
-# vim: noet:sts=8:ts=8:sw=8
