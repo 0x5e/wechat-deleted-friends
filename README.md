@@ -27,3 +27,6 @@ Mac OS用法:
 [Go 版](https://github.com/miraclesu/wechat-deleted-friends)
 
 [Node.js 版](https://github.com/chemdemo/wechat-helper)
+
+[Chrome 插件](https://github.com/liaohuqiu/wechat-helper)
+
