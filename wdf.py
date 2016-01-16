@@ -481,7 +481,7 @@ def main():
         progress_len = MAX_PROGRESS_LEN
         progress = '-' * progress_len
         progress_str = '%s' % ''.join(
-            map(lambda x: '#', progress[:(progress_len * (i + 1)) / group_num]))
+            map(lambda x: '#', progress[:int((progress_len * (i + 1)) / group_num)]))
         print(''.join(
             ['[', progress_str, ''.join('-' * (progress_len - len(progress_str))), ']']))
         print('新发现你被%d人删除' % DeletedCount)
