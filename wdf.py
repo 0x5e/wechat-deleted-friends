@@ -4,9 +4,9 @@ from __future__ import print_function
 
 import os
 try:
-    from urllib import urlencode
+    from urllib import urlencode, quote_plus
 except ImportError:
-    from urllib.parse import urlencode
+    from urllib.parse import urlencode, quote_plus
 
 try:
     import urllib2 as wdf_urllib
@@ -23,11 +23,12 @@ import sys
 import math
 import subprocess
 import ssl
+import thread
 
 DEBUG = False
 
 MAX_GROUP_NUM = 35  # 每组人数
-INTERFACE_CALLING_INTERVAL = 16  # 接口调用时间间隔, 值设为13时亲测出现"操作太频繁"
+INTERFACE_CALLING_INTERVAL = 20  # 接口调用时间间隔, 间隔太短容易出现"操作太频繁", 会被限制操作半小时左右
 MAX_PROGRESS_LEN = 50
 
 QRImagePath = os.path.join(os.getcwd(), 'qrcode.jpg')
@@ -37,6 +38,7 @@ uuid = ''
 
 base_uri = ''
 redirect_uri = ''
+push_uri = ''
 
 skey = ''
 wxsid = ''
@@ -48,7 +50,7 @@ BaseRequest = {}
 
 ContactList = []
 My = []
-SyncKey = ''
+SyncKey = []
 
 try:
     xrange
@@ -56,6 +58,18 @@ try:
 except:
     # python 3
     pass
+
+
+def responseState(func, BaseResponse):
+    ErrMsg = BaseResponse['ErrMsg']
+    Ret = BaseResponse['Ret']
+    if DEBUG or Ret != 0:
+        print('func: %s, Ret: %d, ErrMsg: %s' % (func, Ret, ErrMsg))
+
+    if Ret != 0:
+        return False
+
+    return True
 
 
 def getRequest(url, data=None):
@@ -126,7 +140,7 @@ def showQRImage():
 
 
 def waitForLogin():
-    global tip, base_uri, redirect_uri
+    global tip, base_uri, redirect_uri, push_uri
 
     url = 'https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login?tip=%s&uuid=%s&_=%s' % (
         tip, uuid, int(time.time()))
@@ -153,6 +167,21 @@ def waitForLogin():
         redirect_uri = pm.group(1) + '&fun=new'
         base_uri = redirect_uri[:redirect_uri.rfind('/')]
 
+        # push_uri与base_uri对应关系(排名分先后)(就是这么奇葩..)
+        services = [
+            ('wx2.qq.com', 'webpush2.weixin.qq.com'),
+            ('qq.com', 'webpush.weixin.qq.com'),
+            ('web1.wechat.com', 'webpush1.wechat.com'),
+            ('web2.wechat.com', 'webpush2.wechat.com'),
+            ('wechat.com', 'webpush.wechat.com'),
+            ('web1.wechatapp.com', 'webpush1.wechatapp.com'),
+        ]
+        push_uri = base_uri
+        for (searchUrl, pushUrl) in services:
+            if base_uri.find(searchUrl) >= 0:
+                push_uri = 'https://%s/cgi-bin/mmwebwx-bin' % pushUrl
+                break
+
         # closeQRImage
         if sys.platform.find('darwin') >= 0:  # for OSX with Preview
             os.system("osascript -e 'quit app \"Preview\"'")
@@ -171,18 +200,6 @@ def login():
     data = response.read().decode('utf-8', 'replace')
 
     # print(data)
-
-    '''
-        <error>
-            <ret>0</ret>
-            <message>OK</message>
-            <skey>xxx</skey>
-            <wxsid>xxx</wxsid>
-            <wxuin>xxx</wxuin>
-            <pass_ticket>xxx</pass_ticket>
-            <isgrayscale>1</isgrayscale>
-        </error>
-    '''
 
     doc = xml.dom.minidom.parseString(data)
     root = doc.documentElement
@@ -240,21 +257,10 @@ def webwxinit():
     dic = json.loads(data)
     ContactList = dic['ContactList']
     My = dic['User']
+    SyncKey = dic['SyncKey']
 
-    SyncKeyList = []
-    for item in dic['SyncKey']['List']:
-        SyncKeyList.append('%s_%s' % (item['Key'], item['Val']))
-    SyncKey = '|'.join(SyncKeyList)
-
-    ErrMsg = dic['BaseResponse']['ErrMsg']
-    if DEBUG:
-        print("Ret: %d, ErrMsg: %s" % (dic['BaseResponse']['Ret'], ErrMsg))
-
-    Ret = dic['BaseResponse']['Ret']
-    if Ret != 0:
-        return False
-
-    return True
+    state = responseState('webwxinit', dic['BaseResponse'])
+    return state
 
 
 def webwxgetcontact():
@@ -297,9 +303,6 @@ def webwxgetcontact():
 
 
 def createChatroom(UserNames):
-    # MemberList = []
-    # for UserName in UserNames:
-        # MemberList.append({'UserName': UserName})
     MemberList = [{'UserName': UserName} for UserName in UserNames]
 
     url = base_uri + \
@@ -323,15 +326,16 @@ def createChatroom(UserNames):
     ChatRoomName = dic['ChatRoomName']
     MemberList = dic['MemberList']
     DeletedList = []
+    BlockedList = []
     for Member in MemberList:
         if Member['MemberStatus'] == 4:  # 被对方删除了
             DeletedList.append(Member['UserName'])
+        elif Member['MemberStatus'] == 3:  # 被加入黑名单
+            BlockedList.append(Member['UserName'])
 
-    ErrMsg = dic['BaseResponse']['ErrMsg']
-    if DEBUG:
-        print("Ret: %d, ErrMsg: %s" % (dic['BaseResponse']['Ret'], ErrMsg))
+    state = responseState('createChatroom', dic['BaseResponse'])
 
-    return ChatRoomName, DeletedList
+    return ChatRoomName, DeletedList, BlockedList
 
 
 def deleteMember(ChatRoomName, UserNames):
@@ -351,15 +355,9 @@ def deleteMember(ChatRoomName, UserNames):
     # print(data)
 
     dic = json.loads(data)
-    ErrMsg = dic['BaseResponse']['ErrMsg']
-    Ret = dic['BaseResponse']['Ret']
-    if DEBUG:
-        print("Ret: %d, ErrMsg: %s" % (Ret, ErrMsg))
 
-    if Ret != 0:
-        return False
-
-    return True
+    state = responseState('deleteMember', dic['BaseResponse'])
+    return state
 
 
 def addMember(ChatRoomName, UserNames):
@@ -381,25 +379,33 @@ def addMember(ChatRoomName, UserNames):
     dic = json.loads(data)
     MemberList = dic['MemberList']
     DeletedList = []
+    BlockedList = []
     for Member in MemberList:
         if Member['MemberStatus'] == 4:  # 被对方删除了
             DeletedList.append(Member['UserName'])
+        elif Member['MemberStatus'] == 3:  # 被加入黑名单
+            BlockedList.append(Member['UserName'])
 
-    ErrMsg = dic['BaseResponse']['ErrMsg']
-    if DEBUG:
-        print("Ret: %d, ErrMsg: %s" % (dic['BaseResponse']['Ret'], ErrMsg))
+    state = responseState('addMember', dic['BaseResponse'])
 
-    return DeletedList
+    return DeletedList, BlockedList
+
+
+def syncKey():
+    SyncKeyItems = ['%s_%s' % (item['Key'], item['Val'])
+                    for item in SyncKey['List']]
+    SyncKeyStr = '|'.join(SyncKeyItems)
+    return SyncKeyStr
 
 
 def syncCheck():
-    url = base_uri + '/synccheck?'
+    url = push_uri + '/synccheck?'
     params = {
-        'skey': BaseRequest['SKey'],
+        'skey': BaseRequest['Skey'],
         'sid': BaseRequest['Sid'],
         'uin': BaseRequest['Uin'],
         'deviceId': BaseRequest['DeviceID'],
-        'synckey': SyncKey,
+        'synckey': syncKey(),
         'r': int(time.time()),
     }
 
@@ -410,6 +416,46 @@ def syncCheck():
     # print(data)
 
     # window.synccheck={retcode:"0",selector:"2"}
+    regx = r'window.synccheck={retcode:"(\d+)",selector:"(\d+)"}'
+    pm = re.search(regx, data)
+
+    retcode = pm.group(1)
+    selector = pm.group(2)
+
+    return selector
+
+
+def webwxsync():
+    global SyncKey
+
+    url = base_uri + '/webwxsync?lang=zh_CN&skey=%s&sid=%s&pass_ticket=%s' % (
+        BaseRequest['Skey'], BaseRequest['Sid'], quote_plus(pass_ticket))
+    params = {
+        'BaseRequest': BaseRequest,
+        'SyncKey': SyncKey,
+        'rr': ~int(time.time()),
+    }
+
+    request = getRequest(url=url, data=json.dumps(params))
+    request.add_header('ContentType', 'application/json; charset=UTF-8')
+    response = wdf_urllib.urlopen(request)
+    data = response.read().decode('utf-8', 'replace')
+
+    # print(data)
+
+    dic = json.loads(data)
+    SyncKey = dic['SyncKey']
+
+    state = responseState('webwxsync', dic['BaseResponse'])
+    return state
+
+
+def heartBeatLoop():
+    while True:
+        selector = syncCheck()
+        if selector != '0':
+            webwxsync()
+        time.sleep(1)
 
 
 def main():
@@ -419,6 +465,8 @@ def main():
 
         opener = wdf_urllib.build_opener(
             wdf_urllib.HTTPCookieProcessor(CookieJar()))
+        opener.addheaders = [
+            ('User-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.125 Safari/537.36')]
         wdf_urllib.install_opener(opener)
     except:
         pass
@@ -427,6 +475,7 @@ def main():
         print('获取uuid失败')
         return
 
+    print('正在获取二维码图片...')
     showQRImage()
     time.sleep(1)
 
@@ -444,6 +493,9 @@ def main():
         return
 
     MemberList = webwxgetcontact()
+
+    print('开启心跳线程')
+    thread.start_new_thread(heartBeatLoop, ())
 
     MemberCount = len(MemberList)
     print('通讯录共%s位好友' % MemberCount)
@@ -466,9 +518,12 @@ def main():
 
         # 新建群组/添加成员
         if ChatRoomName == '':
-            (ChatRoomName, DeletedList) = createChatroom(UserNames)
+            (ChatRoomName, DeletedList, BlockedList) = createChatroom(
+                UserNames)
         else:
-            DeletedList = addMember(ChatRoomName, UserNames)
+            (DeletedList, BlockedList) = addMember(ChatRoomName, UserNames)
+
+        # todo BlockedList 被拉黑列表
 
         DeletedCount = len(DeletedList)
         if DeletedCount > 0:
@@ -539,6 +594,5 @@ if sys.stdout.encoding == 'cp936':
 if __name__ == '__main__':
 
     print('本程序的查询结果可能会引起一些心理上的不适,请小心使用...')
-    print('开始')
     main()
-    print('结束')
+    print('回车键退出...')
