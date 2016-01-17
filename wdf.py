@@ -533,12 +533,8 @@ def main():
         deleteMember(ChatRoomName, UserNames)
 
         # 进度条
-        progress_len = MAX_PROGRESS_LEN
-        progress = '-' * progress_len
-        progress_str = '%s' % ''.join(
-            map(lambda x: '#', progress[:int((progress_len * (i + 1)) / group_num)]))
-        print(''.join(
-            ['[', progress_str, ''.join('-' * (progress_len - len(progress_str))), ']']))
+        progress = MAX_PROGRESS_LEN * (i + 1) / group_num
+        print('[', '#' * progress, '-' * (MAX_PROGRESS_LEN - progress), ']', end=' ')
         print('新发现你被%d人删除' % DeletedCount)
         for i in range(DeletedCount):
             if d[DeletedList[i]][1] != '':
