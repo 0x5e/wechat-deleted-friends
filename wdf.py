@@ -23,7 +23,7 @@ import sys
 import math
 import subprocess
 import ssl
-import thread
+import threading
 
 DEBUG = False
 
@@ -495,7 +495,7 @@ def main():
     MemberList = webwxgetcontact()
 
     print('开启心跳线程')
-    thread.start_new_thread(heartBeatLoop, ())
+    threading.Thread(target=heartBeatLoop)
 
     MemberCount = len(MemberList)
     print('通讯录共%s位好友' % MemberCount)
@@ -534,7 +534,7 @@ def main():
 
         # 进度条
         progress = MAX_PROGRESS_LEN * (i + 1) / group_num
-        print('[', '#' * progress, '-' * (MAX_PROGRESS_LEN - progress), ']', end=' ')
+        print('[', '#' * int(progress), '-' * int(MAX_PROGRESS_LEN - progress), ']', end=' ')
         print('新发现你被%d人删除' % DeletedCount)
         for i in range(DeletedCount):
             if d[DeletedList[i]][1] != '':
@@ -558,7 +558,7 @@ def main():
 
     print('---------- 被删除的好友列表(共%d人) ----------' % len(result))
     # 过滤emoji
-    resultNames = map(lambda x: re.sub(r'<span.+/span>', '', x), resultNames)
+    resultNames = list(map(lambda x: re.sub(r'<span.+/span>', '', x), resultNames))
     if len(resultNames):
         print('\n'.join(resultNames))
     else:
@@ -579,7 +579,7 @@ class UnicodeStreamFilter:
         self.encode_to = self.target.encoding
 
     def write(self, s):
-        if type(s) == str:
+        if type(s) == bytes:
             s = s.decode('utf-8')
         s = s.encode(self.encode_to, self.errors).decode(self.encode_to)
         self.target.write(s)
