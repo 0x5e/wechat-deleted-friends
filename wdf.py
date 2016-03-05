@@ -3,18 +3,7 @@
 from __future__ import print_function
 
 import os
-try:
-    from urllib import urlencode, quote_plus
-except ImportError:
-    from urllib.parse import urlencode, quote_plus
-
-try:
-    import urllib2 as wdf_urllib
-    from cookielib import CookieJar
-except ImportError:
-    import urllib.request as wdf_urllib
-    from http.cookiejar import CookieJar
-
+import requests
 import re
 import time
 import xml.dom.minidom
@@ -28,7 +17,7 @@ import threading
 DEBUG = False
 
 MAX_GROUP_NUM = 35  # 每组人数
-INTERFACE_CALLING_INTERVAL = 16  # 接口调用时间间隔, 间隔太短容易出现"操作太频繁", 会被限制操作半小时左右
+INTERFACE_CALLING_INTERVAL = 20  # 接口调用时间间隔, 间隔太短容易出现"操作太频繁", 会被限制操作半小时左右
 MAX_PROGRESS_LEN = 50
 
 QRImagePath = os.path.join(os.getcwd(), 'qrcode.jpg')
@@ -52,13 +41,6 @@ ContactList = []
 My = []
 SyncKey = []
 
-try:
-    xrange
-    range = xrange
-except:
-    # python 3
-    pass
-
 
 def responseState(func, BaseResponse):
     ErrMsg = BaseResponse['ErrMsg']
@@ -72,14 +54,6 @@ def responseState(func, BaseResponse):
     return True
 
 
-def getRequest(url, data=None):
-    try:
-        data = data.encode('utf-8')
-    except:
-        pass
-    finally:
-        return wdf_urllib.Request(url=url, data=data)
-
 
 def getUUID():
     global uuid
@@ -92,9 +66,8 @@ def getUUID():
         '_': int(time.time()),
     }
 
-    request = getRequest(url=url, data=urlencode(params))
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r= myRequests.get(url=url, params=params)
+    data = r.text
 
     # print(data)
 
@@ -120,13 +93,12 @@ def showQRImage():
         '_': int(time.time()),
     }
 
-    request = getRequest(url=url, data=urlencode(params))
-    response = wdf_urllib.urlopen(request)
+    r = myRequests.get(url=url, params=params)
 
     tip = 1
 
     f = open(QRImagePath, 'wb')
-    f.write(response.read())
+    f.write(r.content)
     f.close()
     time.sleep(1)
 
@@ -146,9 +118,8 @@ def waitForLogin():
     url = 'https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login?tip=%s&uuid=%s&_=%s' % (
         tip, uuid, int(time.time()))
 
-    request = getRequest(url=url)
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r = myRequests.get(url=url)
+    data = r.text
 
     # print(data)
 
@@ -196,9 +167,8 @@ def waitForLogin():
 def login():
     global skey, wxsid, wxuin, pass_ticket, BaseRequest
 
-    request = getRequest(url=redirect_uri)
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r = myRequests.get(url=redirect_uri)
+    data = r.text
 
     # print(data)
 
@@ -233,29 +203,27 @@ def login():
 
 def webwxinit():
 
-    url = base_uri + \
+    url = (base_uri + 
         '/webwxinit?pass_ticket=%s&skey=%s&r=%s' % (
-            pass_ticket, skey, int(time.time()))
-    params = {
-        'BaseRequest': BaseRequest
-    }
+            pass_ticket, skey, int(time.time())) )
+    params  = {'BaseRequest': BaseRequest }
+    headers = {'content-type': 'application/json; charset=UTF-8'}
 
-    request = getRequest(url=url, data=json.dumps(params))
-    request.add_header('ContentType', 'application/json; charset=UTF-8')
-    response = wdf_urllib.urlopen(request)
-    data = response.read()
+    r = myRequests.post(url=url, data=json.dumps(params),headers=headers)
+    if not r.encoding == 'utf-8':
+        r.encoding = 'utf-8'
+    data = r.json()
 
     if DEBUG:
         f = open(os.path.join(os.getcwd(), 'webwxinit.json'), 'wb')
-        f.write(data)
+        f.write(r.content)
         f.close()
 
-    data = data.decode('utf-8', 'replace')
 
     # print(data)
 
     global ContactList, My, SyncKey
-    dic = json.loads(data)
+    dic = data
     ContactList = dic['ContactList']
     My = dic['User']
     SyncKey = dic['SyncKey']
@@ -269,21 +237,22 @@ def webwxgetcontact():
     url = base_uri + \
         '/webwxgetcontact?pass_ticket=%s&skey=%s&r=%s' % (
             pass_ticket, skey, int(time.time()))
+    headers = {'content-type': 'application/json; charset=UTF-8'}
 
-    request = getRequest(url=url)
-    request.add_header('ContentType', 'application/json; charset=UTF-8')
-    response = wdf_urllib.urlopen(request)
-    data = response.read()
+
+    r = myRequests.post(url=url,headers=headers)
+    if not r.encoding == 'utf-8':
+        r.encoding = 'utf-8'
+    data = r.json()
 
     if DEBUG:
         f = open(os.path.join(os.getcwd(), 'webwxgetcontact.json'), 'wb')
-        f.write(data)
+        f.write(r.content)
         f.close()
 
     # print(data)
-    data = data.decode('utf-8', 'replace')
 
-    dic = json.loads(data)
+    dic = data
     MemberList = dic['MemberList']
 
     # 倒序遍历,不然删除的时候出问题..
@@ -315,15 +284,16 @@ def createChatroom(UserNames):
         'MemberList': MemberList,
         'Topic': '',
     }
+    headers = {'content-type': 'application/json; charset=UTF-8'}
 
-    request = getRequest(url=url, data=json.dumps(params))
-    request.add_header('ContentType', 'application/json; charset=UTF-8')
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r = myRequests.post(url=url, data=json.dumps(params),headers=headers)
+    if not r.encoding == 'utf-8':
+        r.encoding = 'utf-8'
+    data = r.json()
 
     # print(data)
 
-    dic = json.loads(data)
+    dic = data
     ChatRoomName = dic['ChatRoomName']
     MemberList = dic['MemberList']
     DeletedList = []
@@ -347,15 +317,16 @@ def deleteMember(ChatRoomName, UserNames):
         'ChatRoomName': ChatRoomName,
         'DelMemberList': ','.join(UserNames),
     }
+    headers = {'content-type': 'application/json; charset=UTF-8'}
 
-    request = getRequest(url=url, data=json.dumps(params))
-    request.add_header('ContentType', 'application/json; charset=UTF-8')
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r = myRequests.post(url=url, data=json.dumps(params),headers=headers)
+    if not r.encoding == 'utf-8':
+        r.encoding = 'utf-8'
+    data = r.json()
 
     # print(data)
 
-    dic = json.loads(data)
+    dic = data
 
     state = responseState('deleteMember', dic['BaseResponse'])
     return state
@@ -369,15 +340,16 @@ def addMember(ChatRoomName, UserNames):
         'ChatRoomName': ChatRoomName,
         'AddMemberList': ','.join(UserNames),
     }
+    headers = {'content-type': 'application/json; charset=UTF-8'}
 
-    request = getRequest(url=url, data=json.dumps(params))
-    request.add_header('ContentType', 'application/json; charset=UTF-8')
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r = myRequests.post(url=url, data=json.dumps(params),headers=headers)
+    if not r.encoding == 'utf-8':
+        r.encoding = 'utf-8'
+    data = r.json()
 
     # print(data)
 
-    dic = json.loads(data)
+    dic = data
     MemberList = dic['MemberList']
     DeletedList = []
     BlockedList = []
@@ -410,9 +382,8 @@ def syncCheck():
         'r': int(time.time()),
     }
 
-    request = getRequest(url=url + urlencode(params))
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r = myRequests.get(url=url,params=params)
+    data = r.text
 
     # print(data)
 
@@ -436,15 +407,16 @@ def webwxsync():
         'SyncKey': SyncKey,
         'rr': ~int(time.time()),
     }
+    headers = {'content-type': 'application/json; charset=UTF-8'}
 
-    request = getRequest(url=url, data=json.dumps(params))
-    request.add_header('ContentType', 'application/json; charset=UTF-8')
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r = myRequests.post(url=url, data=json.dumps(params))
+    if not r.encoding == 'utf-8':
+        r.encoding = 'utf-8'
+    data = r.json()
 
     # print(data)
 
-    dic = json.loads(data)
+    dic = data
     SyncKey = dic['SyncKey']
 
     state = responseState('webwxsync', dic['BaseResponse'])
@@ -460,17 +432,13 @@ def heartBeatLoop():
 
 
 def main():
+    global myRequests
 
-    try:
-        ssl._create_default_https_context = ssl._create_unverified_context
+    ssl._create_default_https_context = ssl._create_unverified_context
+    headers = {'User-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:44.0) Gecko/20100101 Firefox/44.0'}
+    myRequests = requests.Session()
+    myRequests.headers.update(headers)
 
-        opener = wdf_urllib.build_opener(
-            wdf_urllib.HTTPCookieProcessor(CookieJar()))
-        opener.addheaders = [
-            ('User-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.125 Safari/537.36')]
-        wdf_urllib.install_opener(opener)
-    except:
-        pass
 
     if not getUUID():
         print('获取uuid失败')
@@ -478,7 +446,6 @@ def main():
 
     print('正在获取二维码图片...')
     showQRImage()
-    time.sleep(1)
 
     while waitForLogin() != '200':
         pass
@@ -505,8 +472,7 @@ def main():
     result = []
     d = {}
     for Member in MemberList:
-        d[Member['UserName']] = (Member['NickName'].encode(
-            'utf-8'), Member['RemarkName'].encode('utf-8'))
+        d[Member['UserName']] = (Member['NickName'], Member['RemarkName'])
     print('开始查找...')
     group_num = int(math.ceil(MemberCount / float(MAX_GROUP_NUM)))
     for i in range(0, group_num):
@@ -530,6 +496,11 @@ def main():
         if DeletedCount > 0:
             result += DeletedList
 
+        if i != group_num - 1:
+            print('正在继续查找,请耐心等待...')
+            # 下一次进行接口调用需要等待的时间
+            time.sleep(INTERFACE_CALLING_INTERVAL)
+
         # 删除成员
         deleteMember(ChatRoomName, UserNames)
 
@@ -538,24 +509,20 @@ def main():
         print('[', '#' * int(progress), '-' * int(MAX_PROGRESS_LEN - progress), ']', end=' ')
         print('新发现你被%d人删除' % DeletedCount)
         for i in range(DeletedCount):
-            if d[DeletedList[i]][1].decode('utf-8') != '':
-                print('%s(%s)' % (d[DeletedList[i]][0].decode('utf-8'),d[DeletedList[i]][1].decode('utf-8')))
+            if d[DeletedList[i]][1] != '':
+                print('%s(%s)' % (d[DeletedList[i]][0],d[DeletedList[i]][1]))
             else:
-                print(d[DeletedList[i]][0].decode('utf-8'))
+                print(d[DeletedList[i]][0])
 
-        if i != group_num - 1:
-            print('正在继续查找,请耐心等待...')
-            # 下一次进行接口调用需要等待的时间
-            time.sleep(INTERFACE_CALLING_INTERVAL)
     # todo 删除群组
 
     print('\n结果汇总完毕,20s后可重试...')
     resultNames = []
     for r in result:
-        if d[r][1].decode('utf-8') != '':
-            resultNames.append('%s(%s)' % (d[r][0].decode('utf-8'),d[r][1]).decode('utf-8'))
+        if d[r][1] != '':
+            resultNames.append('%s(%s)' % (d[r][0],d[r][1]))
         else:
-            resultNames.append(d[r][0].decode('utf-8'))
+            resultNames.append(d[r][0])
 
     print('---------- 被删除的好友列表(共%d人) ----------' % len(result))
     # 过滤emoji
@@ -567,32 +534,11 @@ def main():
     print('---------------------------------------------')
 
 
-# windows下编码问题修复
-# http://blog.csdn.net/heyuxuanzee/article/details/8442718
-
-class UnicodeStreamFilter:
-
-    def __init__(self, target):
-        self.target = target
-        self.encoding = 'utf-8'
-        self.errors = 'replace'
-        self.encode_to = self.target.encoding
-
-    def write(self, s):
-        if type(s) == str:
-            try:
-                s = s.decode('utf-8')
-            except:
-                pass
-        s = s.encode(self.encode_to, self.errors).decode(self.encode_to)
-        self.target.write(s)
-
-if sys.stdout.encoding == 'cp936':
-    sys.stdout = UnicodeStreamFilter(sys.stdout)
 
 if __name__ == '__main__':
 
     print('本程序的查询结果可能会引起一些心理上的不适,请小心使用...')
+    print('1小时内只能使用一次，否则会因操作繁忙阻止建群')
     main()
     print('回车键退出...')
     input()
