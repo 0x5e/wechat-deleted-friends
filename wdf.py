@@ -67,6 +67,7 @@ def getUUID():
     }
 
     r= myRequests.get(url=url, params=params)
+    r.encoding = 'utf-8'
     data = r.text
 
     # print(data)
@@ -119,6 +120,7 @@ def waitForLogin():
         tip, uuid, int(time.time()))
 
     r = myRequests.get(url=url)
+    r.encoding = 'utf-8'
     data = r.text
 
     # print(data)
@@ -168,6 +170,7 @@ def login():
     global skey, wxsid, wxuin, pass_ticket, BaseRequest
 
     r = myRequests.get(url=redirect_uri)
+    r.encoding = 'utf-8'
     data = r.text
 
     # print(data)
@@ -210,8 +213,7 @@ def webwxinit():
     headers = {'content-type': 'application/json; charset=UTF-8'}
 
     r = myRequests.post(url=url, data=json.dumps(params),headers=headers)
-    if not r.encoding == 'utf-8':
-        r.encoding = 'utf-8'
+    r.encoding = 'utf-8'
     data = r.json()
 
     if DEBUG:
@@ -234,15 +236,14 @@ def webwxinit():
 
 def webwxgetcontact():
 
-    url = base_uri + \
+    url = (base_uri + 
         '/webwxgetcontact?pass_ticket=%s&skey=%s&r=%s' % (
-            pass_ticket, skey, int(time.time()))
+            pass_ticket, skey, int(time.time())) )
     headers = {'content-type': 'application/json; charset=UTF-8'}
 
 
     r = myRequests.post(url=url,headers=headers)
-    if not r.encoding == 'utf-8':
-        r.encoding = 'utf-8'
+    r.encoding = 'utf-8'
     data = r.json()
 
     if DEBUG:
@@ -275,9 +276,9 @@ def webwxgetcontact():
 def createChatroom(UserNames):
     MemberList = [{'UserName': UserName} for UserName in UserNames]
 
-    url = base_uri + \
+    url = (base_uri + 
         '/webwxcreatechatroom?pass_ticket=%s&r=%s' % (
-            pass_ticket, int(time.time()))
+            pass_ticket, int(time.time())) )
     params = {
         'BaseRequest': BaseRequest,
         'MemberCount': len(MemberList),
@@ -287,8 +288,7 @@ def createChatroom(UserNames):
     headers = {'content-type': 'application/json; charset=UTF-8'}
 
     r = myRequests.post(url=url, data=json.dumps(params),headers=headers)
-    if not r.encoding == 'utf-8':
-        r.encoding = 'utf-8'
+    r.encoding = 'utf-8'
     data = r.json()
 
     # print(data)
@@ -310,8 +310,8 @@ def createChatroom(UserNames):
 
 
 def deleteMember(ChatRoomName, UserNames):
-    url = base_uri + \
-        '/webwxupdatechatroom?fun=delmember&pass_ticket=%s' % (pass_ticket)
+    url = (base_uri + 
+        '/webwxupdatechatroom?fun=delmember&pass_ticket=%s' % (pass_ticket) )
     params = {
         'BaseRequest': BaseRequest,
         'ChatRoomName': ChatRoomName,
@@ -320,8 +320,7 @@ def deleteMember(ChatRoomName, UserNames):
     headers = {'content-type': 'application/json; charset=UTF-8'}
 
     r = myRequests.post(url=url, data=json.dumps(params),headers=headers)
-    if not r.encoding == 'utf-8':
-        r.encoding = 'utf-8'
+    r.encoding = 'utf-8'
     data = r.json()
 
     # print(data)
@@ -333,8 +332,8 @@ def deleteMember(ChatRoomName, UserNames):
 
 
 def addMember(ChatRoomName, UserNames):
-    url = base_uri + \
-        '/webwxupdatechatroom?fun=addmember&pass_ticket=%s' % (pass_ticket)
+    url = (base_uri + 
+        '/webwxupdatechatroom?fun=addmember&pass_ticket=%s' % (pass_ticket) )
     params = {
         'BaseRequest': BaseRequest,
         'ChatRoomName': ChatRoomName,
@@ -343,8 +342,7 @@ def addMember(ChatRoomName, UserNames):
     headers = {'content-type': 'application/json; charset=UTF-8'}
 
     r = myRequests.post(url=url, data=json.dumps(params),headers=headers)
-    if not r.encoding == 'utf-8':
-        r.encoding = 'utf-8'
+    r.encoding = 'utf-8'
     data = r.json()
 
     # print(data)
@@ -383,6 +381,7 @@ def syncCheck():
     }
 
     r = myRequests.get(url=url,params=params)
+    r.encoding = 'utf-8'
     data = r.text
 
     # print(data)
@@ -410,8 +409,7 @@ def webwxsync():
     headers = {'content-type': 'application/json; charset=UTF-8'}
 
     r = myRequests.post(url=url, data=json.dumps(params))
-    if not r.encoding == 'utf-8':
-        r.encoding = 'utf-8'
+    r.encoding = 'utf-8'
     data = r.json()
 
     # print(data)
@@ -435,7 +433,7 @@ def main():
     global myRequests
 
     ssl._create_default_https_context = ssl._create_unverified_context
-    headers = {'User-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:44.0) Gecko/20100101 Firefox/44.0'}
+    headers = {'User-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.125 Safari/537.36'}
     myRequests = requests.Session()
     myRequests.headers.update(headers)
 
@@ -496,11 +494,6 @@ def main():
         if DeletedCount > 0:
             result += DeletedList
 
-        if i != group_num - 1:
-            print('正在继续查找,请耐心等待...')
-            # 下一次进行接口调用需要等待的时间
-            time.sleep(INTERFACE_CALLING_INTERVAL)
-
         # 删除成员
         deleteMember(ChatRoomName, UserNames)
 
@@ -514,6 +507,10 @@ def main():
             else:
                 print(d[DeletedList[i]][0])
 
+        if i != group_num - 1:
+            print('正在继续查找,请耐心等待...')
+            # 下一次进行接口调用需要等待的时间
+            time.sleep(INTERFACE_CALLING_INTERVAL)
     # todo 删除群组
 
     print('\n结果汇总完毕,20s后可重试...')
