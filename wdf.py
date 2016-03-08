@@ -12,10 +12,7 @@ import sys
 import math
 import subprocess
 import ssl
-try:
-    import threading
-except ImportError:
-    import thread
+import threading
 
 DEBUG = False
 
@@ -464,10 +461,7 @@ def main():
     MemberList = webwxgetcontact()
 
     print('开启心跳线程')
-    try:
-        threading.Thread(target=heartBeatLoop)
-    except:
-        thread.start_new_thread(heartBeatLoop, ())
+    threading.Thread(target=heartBeatLoop)
 
     MemberCount = len(MemberList)
     print('通讯录共%s位好友' % MemberCount)
