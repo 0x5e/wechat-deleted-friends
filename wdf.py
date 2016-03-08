@@ -41,6 +41,13 @@ ContactList = []
 My = []
 SyncKey = []
 
+try:
+    xrange
+    range = xrange
+except:
+    # python 3
+    pass
+
 
 def responseState(func, BaseResponse):
     ErrMsg = BaseResponse['ErrMsg']
