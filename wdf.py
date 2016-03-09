@@ -3,18 +3,7 @@
 from __future__ import print_function
 
 import os
-try:
-    from urllib import urlencode, quote_plus
-except ImportError:
-    from urllib.parse import urlencode, quote_plus
-
-try:
-    import urllib2 as wdf_urllib
-    from cookielib import CookieJar
-except ImportError:
-    import urllib.request as wdf_urllib
-    from http.cookiejar import CookieJar
-
+import requests
 import re
 import time
 import xml.dom.minidom
@@ -23,7 +12,7 @@ import sys
 import math
 import subprocess
 import ssl
-import thread
+import threading
 
 DEBUG = False
 
@@ -72,14 +61,6 @@ def responseState(func, BaseResponse):
     return True
 
 
-def getRequest(url, data=None):
-    try:
-        data = data.encode('utf-8')
-    except:
-        pass
-    finally:
-        return wdf_urllib.Request(url=url, data=data)
-
 
 def getUUID():
     global uuid
@@ -92,9 +73,9 @@ def getUUID():
         '_': int(time.time()),
     }
 
-    request = getRequest(url=url, data=urlencode(params))
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r= myRequests.get(url=url, params=params)
+    r.encoding = 'utf-8'
+    data = r.text
 
     # print(data)
 
@@ -120,14 +101,14 @@ def showQRImage():
         '_': int(time.time()),
     }
 
-    request = getRequest(url=url, data=urlencode(params))
-    response = wdf_urllib.urlopen(request)
+    r = myRequests.get(url=url, params=params)
 
     tip = 1
 
     f = open(QRImagePath, 'wb')
-    f.write(response.read())
+    f.write(r.content)
     f.close()
+    time.sleep(1)
 
     if sys.platform.find('darwin') >= 0:
         subprocess.call(['open', QRImagePath])
@@ -145,9 +126,9 @@ def waitForLogin():
     url = 'https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login?tip=%s&uuid=%s&_=%s' % (
         tip, uuid, int(time.time()))
 
-    request = getRequest(url=url)
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r = myRequests.get(url=url)
+    r.encoding = 'utf-8'
+    data = r.text
 
     # print(data)
 
@@ -195,9 +176,9 @@ def waitForLogin():
 def login():
     global skey, wxsid, wxuin, pass_ticket, BaseRequest
 
-    request = getRequest(url=redirect_uri)
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r = myRequests.get(url=redirect_uri)
+    r.encoding = 'utf-8'
+    data = r.text
 
     # print(data)
 
@@ -232,29 +213,26 @@ def login():
 
 def webwxinit():
 
-    url = base_uri + \
+    url = (base_uri + 
         '/webwxinit?pass_ticket=%s&skey=%s&r=%s' % (
-            pass_ticket, skey, int(time.time()))
-    params = {
-        'BaseRequest': BaseRequest
-    }
+            pass_ticket, skey, int(time.time())) )
+    params  = {'BaseRequest': BaseRequest }
+    headers = {'content-type': 'application/json; charset=UTF-8'}
 
-    request = getRequest(url=url, data=json.dumps(params))
-    request.add_header('ContentType', 'application/json; charset=UTF-8')
-    response = wdf_urllib.urlopen(request)
-    data = response.read()
+    r = myRequests.post(url=url, data=json.dumps(params),headers=headers)
+    r.encoding = 'utf-8'
+    data = r.json()
 
     if DEBUG:
         f = open(os.path.join(os.getcwd(), 'webwxinit.json'), 'wb')
-        f.write(data)
+        f.write(r.content)
         f.close()
 
-    data = data.decode('utf-8', 'replace')
 
     # print(data)
 
     global ContactList, My, SyncKey
-    dic = json.loads(data)
+    dic = data
     ContactList = dic['ContactList']
     My = dic['User']
     SyncKey = dic['SyncKey']
@@ -265,24 +243,24 @@ def webwxinit():
 
 def webwxgetcontact():
 
-    url = base_uri + \
+    url = (base_uri + 
         '/webwxgetcontact?pass_ticket=%s&skey=%s&r=%s' % (
-            pass_ticket, skey, int(time.time()))
+            pass_ticket, skey, int(time.time())) )
+    headers = {'content-type': 'application/json; charset=UTF-8'}
 
-    request = getRequest(url=url)
-    request.add_header('ContentType', 'application/json; charset=UTF-8')
-    response = wdf_urllib.urlopen(request)
-    data = response.read()
+
+    r = myRequests.post(url=url,headers=headers)
+    r.encoding = 'utf-8'
+    data = r.json()
 
     if DEBUG:
         f = open(os.path.join(os.getcwd(), 'webwxgetcontact.json'), 'wb')
-        f.write(data)
+        f.write(r.content)
         f.close()
 
     # print(data)
-    data = data.decode('utf-8', 'replace')
 
-    dic = json.loads(data)
+    dic = data
     MemberList = dic['MemberList']
 
     # 倒序遍历,不然删除的时候出问题..
@@ -305,24 +283,24 @@ def webwxgetcontact():
 def createChatroom(UserNames):
     MemberList = [{'UserName': UserName} for UserName in UserNames]
 
-    url = base_uri + \
+    url = (base_uri + 
         '/webwxcreatechatroom?pass_ticket=%s&r=%s' % (
-            pass_ticket, int(time.time()))
+            pass_ticket, int(time.time())) )
     params = {
         'BaseRequest': BaseRequest,
         'MemberCount': len(MemberList),
         'MemberList': MemberList,
         'Topic': '',
     }
+    headers = {'content-type': 'application/json; charset=UTF-8'}
 
-    request = getRequest(url=url, data=json.dumps(params))
-    request.add_header('ContentType', 'application/json; charset=UTF-8')
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r = myRequests.post(url=url, data=json.dumps(params),headers=headers)
+    r.encoding = 'utf-8'
+    data = r.json()
 
     # print(data)
 
-    dic = json.loads(data)
+    dic = data
     ChatRoomName = dic['ChatRoomName']
     MemberList = dic['MemberList']
     DeletedList = []
@@ -339,44 +317,44 @@ def createChatroom(UserNames):
 
 
 def deleteMember(ChatRoomName, UserNames):
-    url = base_uri + \
-        '/webwxupdatechatroom?fun=delmember&pass_ticket=%s' % (pass_ticket)
+    url = (base_uri + 
+        '/webwxupdatechatroom?fun=delmember&pass_ticket=%s' % (pass_ticket) )
     params = {
         'BaseRequest': BaseRequest,
         'ChatRoomName': ChatRoomName,
         'DelMemberList': ','.join(UserNames),
     }
+    headers = {'content-type': 'application/json; charset=UTF-8'}
 
-    request = getRequest(url=url, data=json.dumps(params))
-    request.add_header('ContentType', 'application/json; charset=UTF-8')
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r = myRequests.post(url=url, data=json.dumps(params),headers=headers)
+    r.encoding = 'utf-8'
+    data = r.json()
 
     # print(data)
 
-    dic = json.loads(data)
+    dic = data
 
     state = responseState('deleteMember', dic['BaseResponse'])
     return state
 
 
 def addMember(ChatRoomName, UserNames):
-    url = base_uri + \
-        '/webwxupdatechatroom?fun=addmember&pass_ticket=%s' % (pass_ticket)
+    url = (base_uri + 
+        '/webwxupdatechatroom?fun=addmember&pass_ticket=%s' % (pass_ticket) )
     params = {
         'BaseRequest': BaseRequest,
         'ChatRoomName': ChatRoomName,
         'AddMemberList': ','.join(UserNames),
     }
+    headers = {'content-type': 'application/json; charset=UTF-8'}
 
-    request = getRequest(url=url, data=json.dumps(params))
-    request.add_header('ContentType', 'application/json; charset=UTF-8')
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r = myRequests.post(url=url, data=json.dumps(params),headers=headers)
+    r.encoding = 'utf-8'
+    data = r.json()
 
     # print(data)
 
-    dic = json.loads(data)
+    dic = data
     MemberList = dic['MemberList']
     DeletedList = []
     BlockedList = []
@@ -409,9 +387,9 @@ def syncCheck():
         'r': int(time.time()),
     }
 
-    request = getRequest(url=url + urlencode(params))
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r = myRequests.get(url=url,params=params)
+    r.encoding = 'utf-8'
+    data = r.text
 
     # print(data)
 
@@ -435,15 +413,15 @@ def webwxsync():
         'SyncKey': SyncKey,
         'rr': ~int(time.time()),
     }
+    headers = {'content-type': 'application/json; charset=UTF-8'}
 
-    request = getRequest(url=url, data=json.dumps(params))
-    request.add_header('ContentType', 'application/json; charset=UTF-8')
-    response = wdf_urllib.urlopen(request)
-    data = response.read().decode('utf-8', 'replace')
+    r = myRequests.post(url=url, data=json.dumps(params))
+    r.encoding = 'utf-8'
+    data = r.json()
 
     # print(data)
 
-    dic = json.loads(data)
+    dic = data
     SyncKey = dic['SyncKey']
 
     state = responseState('webwxsync', dic['BaseResponse'])
@@ -459,17 +437,13 @@ def heartBeatLoop():
 
 
 def main():
+    global myRequests
 
-    try:
-        ssl._create_default_https_context = ssl._create_unverified_context
+    ssl._create_default_https_context = ssl._create_unverified_context
+    headers = {'User-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.125 Safari/537.36'}
+    myRequests = requests.Session()
+    myRequests.headers.update(headers)
 
-        opener = wdf_urllib.build_opener(
-            wdf_urllib.HTTPCookieProcessor(CookieJar()))
-        opener.addheaders = [
-            ('User-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.125 Safari/537.36')]
-        wdf_urllib.install_opener(opener)
-    except:
-        pass
 
     if not getUUID():
         print('获取uuid失败')
@@ -477,7 +451,6 @@ def main():
 
     print('正在获取二维码图片...')
     showQRImage()
-    time.sleep(1)
 
     while waitForLogin() != '200':
         pass
@@ -495,7 +468,7 @@ def main():
     MemberList = webwxgetcontact()
 
     print('开启心跳线程')
-    thread.start_new_thread(heartBeatLoop, ())
+    threading.Thread(target=heartBeatLoop)
 
     MemberCount = len(MemberList)
     print('通讯录共%s位好友' % MemberCount)
@@ -504,8 +477,7 @@ def main():
     result = []
     d = {}
     for Member in MemberList:
-        d[Member['UserName']] = (Member['NickName'].encode(
-            'utf-8'), Member['RemarkName'].encode('utf-8'))
+        d[Member['UserName']] = (Member['NickName'], Member['RemarkName'])
     print('开始查找...')
     group_num = int(math.ceil(MemberCount / float(MAX_GROUP_NUM)))
     for i in range(0, group_num):
@@ -534,11 +506,11 @@ def main():
 
         # 进度条
         progress = MAX_PROGRESS_LEN * (i + 1) / group_num
-        print('[', '#' * progress, '-' * (MAX_PROGRESS_LEN - progress), ']', end=' ')
+        print('[', '#' * int(progress), '-' * int(MAX_PROGRESS_LEN - progress), ']', end=' ')
         print('新发现你被%d人删除' % DeletedCount)
         for i in range(DeletedCount):
             if d[DeletedList[i]][1] != '':
-                print(d[DeletedList[i]][0] + '(%s)' % d[DeletedList[i]][1])
+                print('%s(%s)' % (d[DeletedList[i]][0],d[DeletedList[i]][1]))
             else:
                 print(d[DeletedList[i]][0])
 
@@ -552,13 +524,13 @@ def main():
     resultNames = []
     for r in result:
         if d[r][1] != '':
-            resultNames.append(d[r][0] + '(%s)' % d[r][1])
+            resultNames.append('%s(%s)' % (d[r][0],d[r][1]))
         else:
             resultNames.append(d[r][0])
 
     print('---------- 被删除的好友列表(共%d人) ----------' % len(result))
     # 过滤emoji
-    resultNames = map(lambda x: re.sub(r'<span.+/span>', '', x), resultNames)
+    resultNames = list(map(lambda x: re.sub(r'<span.+/span>', '', x), resultNames))
     if len(resultNames):
         print('\n'.join(resultNames))
     else:
@@ -568,7 +540,6 @@ def main():
 
 # windows下编码问题修复
 # http://blog.csdn.net/heyuxuanzee/article/details/8442718
-
 
 class UnicodeStreamFilter:
 
@@ -580,7 +551,10 @@ class UnicodeStreamFilter:
 
     def write(self, s):
         if type(s) == str:
-            s = s.decode('utf-8')
+            try:
+                s = s.decode('utf-8')
+            except:
+                pass
         s = s.encode(self.encode_to, self.errors).decode(self.encode_to)
         self.target.write(s)
 
@@ -590,5 +564,7 @@ if sys.stdout.encoding == 'cp936':
 if __name__ == '__main__':
 
     print('本程序的查询结果可能会引起一些心理上的不适,请小心使用...')
+    print('1小时内只能使用一次，否则会因操作繁忙阻止建群')
     main()
     print('回车键退出...')
+    input()
