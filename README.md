@@ -16,7 +16,7 @@ Mac OS用法:
 
 请确保requests模块已成功安装
 
-'$ pip install requests  #安装模块'
+`$ pip install requests   #安装requests模块`
 
 ### 暂未解决的问题
 
