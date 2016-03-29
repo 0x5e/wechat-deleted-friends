@@ -14,6 +14,10 @@ Mac OS用法:
 
 按指示做即可
 
+请确保requests模块已成功安装
+
+`$ pip install requests   #安装requests模块`
+
 ### 暂未解决的问题
 
 错误1205 "操作太频繁，请稍后再试。" (存在接口访问限制)
