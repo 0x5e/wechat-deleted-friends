@@ -438,8 +438,10 @@ def heartBeatLoop():
 
 def main():
     global myRequests
+	
+    if hasattr(ssl, '_create_unverified_context'):
+        ssl._create_default_https_context = ssl._create_unverified_context
 
-    ssl._create_default_https_context = ssl._create_unverified_context
     headers = {'User-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.125 Safari/537.36'}
     myRequests = requests.Session()
     myRequests.headers.update(headers)
