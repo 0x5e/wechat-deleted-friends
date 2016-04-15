@@ -16,8 +16,8 @@ import threading
 
 DEBUG = False
 
-MAX_GROUP_NUM = 35  # 每组人数
-INTERFACE_CALLING_INTERVAL = 20  # 接口调用时间间隔, 间隔太短容易出现"操作太频繁", 会被限制操作半小时左右
+MAX_GROUP_NUM = 2  # 每组人数
+INTERFACE_CALLING_INTERVAL = 5  # 接口调用时间间隔, 间隔太短容易出现"操作太频繁", 会被限制操作半小时左右
 MAX_PROGRESS_LEN = 50
 
 QRImagePath = os.path.join(os.getcwd(), 'qrcode.jpg')
