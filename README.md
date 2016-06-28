@@ -1,5 +1,23 @@
-# wechat-deleted-friends
-查看被删的微信好友
+# 查看被删的微信好友
+
+## 注意
+
+目前存在两个阻碍使用的问题，所以已经无法使用了，请后面来的同学们看看就好，不用尝试了。。。。谢谢大家的关注~
+
+- 新建群组，添加好友的接口存在数量限制。在一定时间内添加的总人数超过一定数量后，接口就会无法使用。（幻想用随机数的童鞋放弃吧。。可能是你好友数量不够多？）
+- 据V站朋友反馈(@kobe1941)：即使你已被对方删除好友，依然可以拉对方入群，所以该脚本工作的前提已不存在。
+
+推荐两个相关项目：
+
+[Urinx / WeixinBot](https://github.com/Urinx/WeixinBot)：网页版微信API，包含终端版微信及微信机器人
+
+[geeeeeeeeek / electronic-wechat](https://github.com/geeeeeeeeek/electronic-wechat)：💬 A better WeChat on macOS and Linux. Fewer bugs, more features. Built with Electron by Zhongyi Tong.
+
+协议相关文档：
+
+[xiangzhai / qwx - 网页微信客户端封包大全](https://github.com/xiangzhai/qwx/blob/master/doc/protocol.md)
+
+## 介绍
 
 原理就是新建群组,如果加不进来就是被删好友了(不要在群组里讲话,别人是看不见的)
 
